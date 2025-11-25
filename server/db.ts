@@ -1,6 +1,15 @@
-import { eq } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser,
+  users,
+  categories,
+  InsertCategory,
+  products,
+  InsertProduct,
+  cartItems,
+  orders,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +98,205 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Get all active categories
+ */
+export async function getCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(categories);
+}
+
+/**
+ * Get all active products with optional filtering
+ */
+export async function getProducts(filters?: { categoryId?: number; search?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(products.isActive, 1)];
+
+  if (filters?.categoryId) {
+    const catCondition = eq(products.categoryId, filters.categoryId);
+    if (catCondition) {
+      conditions.push(catCondition);
+    }
+  }
+
+  if (filters?.search) {
+    const searchTerm = `%${filters.search}%`;
+    const searchCondition = or(
+      like(products.name, searchTerm),
+      like(products.description, searchTerm)
+    );
+    if (searchCondition) {
+      conditions.push(searchCondition);
+    }
+  }
+
+  return db.select().from(products).where(and(...(conditions.filter(Boolean) as any)));
+}
+
+/**
+ * Get a single product by ID
+ */
+export async function getProductById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  return result[0] || null;
+}
+
+/**
+ * Get user's cart items with product details
+ */
+export async function getUserCart(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(cartItems)
+    .where(eq(cartItems.userId, userId));
+}
+
+/**
+ * Add or update cart item
+ */
+export async function upsertCartItem(
+  userId: number,
+  productId: number,
+  quantity: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const existing = await db
+    .select()
+    .from(cartItems)
+    .where(
+      and(
+        eq(cartItems.userId, userId),
+        eq(cartItems.productId, productId)
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(
+        and(
+          eq(cartItems.userId, userId),
+          eq(cartItems.productId, productId)
+        )
+      );
+  } else {
+    await db.insert(cartItems).values({ userId, productId, quantity });
+  }
+}
+
+/**
+ * Remove item from cart
+ */
+export async function removeCartItem(userId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(cartItems)
+    .where(
+      and(
+        eq(cartItems.userId, userId),
+        eq(cartItems.productId, productId)
+      )
+    );
+}
+
+/**
+ * Clear user's cart
+ */
+export async function clearUserCart(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(cartItems).where(eq(cartItems.userId, userId));
+}
+
+/**
+ * Create an order
+ */
+export async function createOrder(
+  userId: number,
+  totalAmount: number,
+  items: unknown
+) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(orders).values({
+    userId,
+    totalAmount,
+    items: JSON.stringify(items),
+    status: "pending",
+  });
+  return result;
+}
+
+/**
+ * Get user's orders
+ */
+export async function getUserOrders(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders).where(eq(orders.userId, userId));
+}
+
+/**
+ * Admin: Create or update product
+ */
+export async function upsertProduct(product: InsertProduct & { id?: number }) {
+  const db = await getDb();
+  if (!db) return null;
+
+  if (product.id) {
+    const { id, ...updateData } = product;
+    await db.update(products).set(updateData).where(eq(products.id, id));
+    return { id };
+  } else {
+    const result = await db.insert(products).values(product);
+    return result;
+  }
+}
+
+/**
+ * Admin: Delete product (soft delete)
+ */
+export async function deleteProduct(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(products).set({ isActive: 0 }).where(eq(products.id, id));
+}
+
+/**
+ * Admin: Create or update category
+ */
+export async function upsertCategory(category: InsertCategory & { id?: number }) {
+  const db = await getDb();
+  if (!db) return null;
+
+  if (category.id) {
+    const { id, ...updateData } = category;
+    await db.update(categories).set(updateData).where(eq(categories.id, id));
+    return { id };
+  } else {
+    const result = await db.insert(categories).values(category);
+    return result;
+  }
+}
+
+/**
+ * Admin: Get all orders
+ */
+export async function getAllOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders);
+}
