@@ -15,6 +15,18 @@ import {
   deleteProduct,
   upsertCategory,
   getAllOrders,
+  createPaymentRequest,
+  getUserPaymentRequests,
+  getAllPaymentRequests,
+  getPaymentRequestById,
+  updatePaymentRequestStatus,
+  createCourseDeliverable,
+  getUserDeliverables,
+  getDeliverableByPaymentRequest,
+  updateDeliverable,
+  getAdminSettings,
+  createOrUpdateAdminSettings,
+  getActiveAdminSettings,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -158,6 +170,164 @@ export const appRouter = router({
     orders: router({
       list: adminProcedure.query(() => getAllOrders()),
     }),
+
+    settings: router({
+      getAdmin: adminProcedure.query(({ ctx }) =>
+        getAdminSettings(ctx.user!.id)
+      ),
+
+      updateAdmin: adminProcedure
+        .input(
+          z.object({
+            upiId: z.string(),
+            upiName: z.string().optional(),
+            bankAccount: z.string().optional(),
+            phoneNumber: z.string().optional(),
+          })
+        )
+        .mutation(({ ctx, input }) =>
+          createOrUpdateAdminSettings({
+            adminId: ctx.user!.id,
+            ...input,
+            isActive: 1,
+          })
+        ),
+
+      getPublicUPI: publicProcedure.query(() => getActiveAdminSettings()),
+    }),
+  }),
+
+  // Payment procedures
+  payments: router({
+    submitRequest: protectedProcedure
+      .input(
+        z.object({
+          productId: z.number(),
+          amount: z.number(),
+          transactionId: z.string(),
+          paymentMethod: z.string().default("upi"),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        createPaymentRequest({
+          userId: ctx.user!.id,
+          productId: input.productId,
+          amount: input.amount,
+          transactionId: input.transactionId,
+          paymentMethod: input.paymentMethod,
+          status: "pending",
+        })
+      ),
+
+    getUserRequests: protectedProcedure.query(({ ctx }) =>
+      getUserPaymentRequests(ctx.user!.id)
+    ),
+
+    getRequestDetails: protectedProcedure
+      .input(z.number())
+      .query(async ({ input, ctx }) => {
+        const request = await getPaymentRequestById(input);
+        if (!request || request.userId !== ctx.user!.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        return request;
+      }),
+  }),
+
+  // Delivery procedures
+  deliverables: router({
+    getUserDeliverables: protectedProcedure.query(({ ctx }) =>
+      getUserDeliverables(ctx.user!.id)
+    ),
+
+    getDeliverable: protectedProcedure
+      .input(z.number())
+      .query(async ({ input, ctx }) => {
+        const deliverable = await getDeliverableByPaymentRequest(input);
+        if (!deliverable || deliverable.userId !== ctx.user!.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        return deliverable;
+      }),
+  }),
+
+  // Admin payment management
+  adminPayments: router({
+    listAll: adminProcedure.query(() => getAllPaymentRequests()),
+
+    getDetails: adminProcedure
+      .input(z.number())
+      .query(({ input }) => getPaymentRequestById(input)),
+
+    approve: adminProcedure
+      .input(
+        z.object({
+          paymentRequestId: z.number(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ input }) =>
+        updatePaymentRequestStatus(
+          input.paymentRequestId,
+          "approved",
+          input.notes
+        )
+      ),
+
+    reject: adminProcedure
+      .input(
+        z.object({
+          paymentRequestId: z.number(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ input }) =>
+        updatePaymentRequestStatus(
+          input.paymentRequestId,
+          "rejected",
+          input.notes
+        )
+      ),
+
+    deliverContent: adminProcedure
+      .input(
+        z.object({
+          paymentRequestId: z.number(),
+          deliveryType: z.enum(["course", "api", "tool", "service"]),
+          accessLink: z.string().optional(),
+          apiKey: z.string().optional(),
+          credentials: z.string().optional(),
+          expiresAt: z.date().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const paymentRequest = await getPaymentRequestById(
+          input.paymentRequestId
+        );
+        if (!paymentRequest) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        const result = await createCourseDeliverable({
+          productId: paymentRequest.productId,
+          paymentRequestId: input.paymentRequestId,
+          userId: paymentRequest.userId,
+          deliveryType: input.deliveryType,
+          accessLink: input.accessLink,
+          apiKey: input.apiKey,
+          credentials: input.credentials,
+          expiresAt: input.expiresAt,
+          isActive: 1,
+        });
+
+        // Mark payment as delivered
+        await updatePaymentRequestStatus(
+          input.paymentRequestId,
+          "delivered"
+        );
+
+        return result;
+      }),
   }),
 });
 

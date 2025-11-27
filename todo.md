@@ -36,3 +36,21 @@
 - [x] Test shopping cart and checkout flow
 - [ ] Create checkpoint for stable version
 - [ ] Upload code to GitHub
+
+## Payment & UPI Integration
+- [x] Add payment request table to database schema
+- [x] Add course/API delivery table to database schema
+- [x] Create payment request procedures
+- [x] Create admin payment approval procedures
+- [x] Create course delivery procedures
+- [x] Build payment request submission form
+- [x] Build admin payment approval panel
+- [x] Add UPI payment display with admin details
+
+## Deployment Configuration
+- [x] Configure for Render deployment
+- [x] Configure for Vercel deployment
+- [x] Add environment variable documentation
+- [x] Create deployment guides
+- [ ] Test on Render
+- [ ] Test on Vercel

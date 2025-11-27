@@ -90,3 +90,62 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+/**
+ * Payment requests submitted by users
+ */
+export const paymentRequests = mysqlTable("paymentRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  productId: int("productId").notNull(),
+  amount: int("amount").notNull(), // In cents
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "delivered"]).default("pending").notNull(),
+  transactionId: varchar("transactionId", { length: 255 }).notNull(), // UTR or Transaction ID
+  paymentMethod: varchar("paymentMethod", { length: 50 }).default("upi").notNull(),
+  notes: text("notes"), // Admin notes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentRequest = typeof paymentRequests.$inferSelect;
+export type InsertPaymentRequest = typeof paymentRequests.$inferInsert;
+
+/**
+ * Course and API deliverables
+ */
+export const courseDeliverables = mysqlTable("courseDeliverables", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  paymentRequestId: int("paymentRequestId").notNull(),
+  userId: int("userId").notNull(),
+  deliveryType: mysqlEnum("deliveryType", ["course", "api", "tool", "service"]).notNull(),
+  deliveryContent: text("deliveryContent"), // JSON: links, credentials, files, etc.
+  accessLink: varchar("accessLink", { length: 500 }),
+  apiKey: varchar("apiKey", { length: 500 }),
+  credentials: text("credentials"), // JSON: username, password, etc.
+  expiresAt: timestamp("expiresAt"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CourseDeliverable = typeof courseDeliverables.$inferSelect;
+export type InsertCourseDeliverable = typeof courseDeliverables.$inferInsert;
+
+/**
+ * Admin settings for payment collection
+ */
+export const adminSettings = mysqlTable("adminSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  adminId: int("adminId").notNull(),
+  upiId: varchar("upiId", { length: 255 }).notNull(), // UPI ID for payments
+  upiName: varchar("upiName", { length: 255 }), // Name associated with UPI
+  bankAccount: varchar("bankAccount", { length: 255 }), // Optional bank details
+  phoneNumber: varchar("phoneNumber", { length: 20 }),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AdminSettings = typeof adminSettings.$inferSelect;
+export type InsertAdminSettings = typeof adminSettings.$inferInsert;

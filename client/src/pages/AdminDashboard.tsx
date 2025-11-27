@@ -17,7 +17,7 @@ import {
 
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "orders">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "categories" | "orders" | "payments">("products");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -202,6 +202,14 @@ export default function AdminDashboard() {
           >
             Orders
           </Button>
+          <Link href="/admin/payments">
+            <Button
+              variant="ghost"
+              className="hover:bg-accent/10"
+            >
+              💳 Payments
+            </Button>
+          </Link>
         </div>
 
         {/* Products Tab */}

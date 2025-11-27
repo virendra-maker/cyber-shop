@@ -39,7 +39,7 @@ export default function Home() {
             <h1 className="text-2xl font-bold gradient-text">{APP_TITLE}</h1>
           </div>
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
+                {isAuthenticated ? (
               <>
                 <span className="text-sm text-muted-foreground">
                   Welcome, {user?.name}
@@ -48,6 +48,11 @@ export default function Home() {
                   <Button variant="outline" size="sm">
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Cart
+                  </Button>
+                </Link>
+                <Link href="/payments">
+                  <Button variant="outline" size="sm">
+                    Payments
                   </Button>
                 </Link>
                 <Link href="/orders">

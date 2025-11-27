@@ -8,6 +8,9 @@ import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import AdminDashboard from "./pages/AdminDashboard";
+import PaymentRequest from "./pages/PaymentRequest";
+import Payments from "./pages/Payments";
+import AdminPayments from "./pages/AdminPayments";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -16,7 +19,10 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/cart"} component={Cart} />
       <Route path={"/orders"} component={Orders} />
+      <Route path={"/payment-request"} component={PaymentRequest} />
+      <Route path={"/payments"} component={Payments} />
       <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/payments"} component={AdminPayments} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -9,6 +9,12 @@ import {
   InsertProduct,
   cartItems,
   orders,
+  paymentRequests,
+  InsertPaymentRequest,
+  courseDeliverables,
+  InsertCourseDeliverable,
+  adminSettings,
+  InsertAdminSettings,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -299,4 +305,126 @@ export async function getAllOrders() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(orders);
+}
+
+
+/**
+ * Payment Requests
+ */
+export async function createPaymentRequest(request: InsertPaymentRequest) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(paymentRequests).values(request);
+  return result;
+}
+
+export async function getUserPaymentRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(paymentRequests).where(eq(paymentRequests.userId, userId));
+}
+
+export async function getAllPaymentRequests() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(paymentRequests);
+}
+
+export async function getPaymentRequestById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(paymentRequests).where(eq(paymentRequests.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function updatePaymentRequestStatus(
+  id: number,
+  status: "pending" | "approved" | "rejected" | "delivered",
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+  const updateData: Record<string, unknown> = { status };
+  if (notes) {
+    updateData.notes = notes;
+  }
+  await db.update(paymentRequests).set(updateData).where(eq(paymentRequests.id, id));
+  return { id };
+}
+
+/**
+ * Course Deliverables
+ */
+export async function createCourseDeliverable(deliverable: InsertCourseDeliverable) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(courseDeliverables).values(deliverable);
+  return result;
+}
+
+export async function getUserDeliverables(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(courseDeliverables).where(eq(courseDeliverables.userId, userId));
+}
+
+export async function getDeliverableByPaymentRequest(paymentRequestId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(courseDeliverables)
+    .where(eq(courseDeliverables.paymentRequestId, paymentRequestId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function updateDeliverable(
+  id: number,
+  updates: Partial<InsertCourseDeliverable>
+) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(courseDeliverables).set(updates).where(eq(courseDeliverables.id, id));
+  return { id };
+}
+
+/**
+ * Admin Settings
+ */
+export async function getAdminSettings(adminId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(adminSettings)
+    .where(eq(adminSettings.adminId, adminId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function createOrUpdateAdminSettings(settings: InsertAdminSettings & { adminId: number }) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const existing = await getAdminSettings(settings.adminId);
+  if (existing) {
+    const { adminId, ...updateData } = settings;
+    await db.update(adminSettings).set(updateData).where(eq(adminSettings.adminId, adminId));
+    return { id: existing.id };
+  } else {
+    const result = await db.insert(adminSettings).values(settings);
+    return result;
+  }
+}
+
+export async function getActiveAdminSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(adminSettings)
+    .where(eq(adminSettings.isActive, 1))
+    .limit(1);
+  return result[0] || null;
 }

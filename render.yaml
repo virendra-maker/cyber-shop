@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: cyber-shop
+    env: node
+    plan: free
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        scope: build
+        sync: false
+      - key: JWT_SECRET
+        scope: build
+        sync: false
+      - key: VITE_APP_ID
+        scope: build
+        sync: false
+      - key: OAUTH_SERVER_URL
+        scope: build
+        sync: false
+      - key: VITE_OAUTH_PORTAL_URL
+        scope: build
+        sync: false
+      - key: OWNER_OPEN_ID
+        scope: build
+        sync: false
+      - key: OWNER_NAME
+        scope: build
+        sync: false
+      - key: VITE_APP_TITLE
+        value: "Cyber Shop - Hacking Tools and Services"
+      - key: VITE_APP_LOGO
+        value: "/logo.svg"
+      - key: BUILT_IN_FORGE_API_URL
+        scope: build
+        sync: false
+      - key: BUILT_IN_FORGE_API_KEY
+        scope: build
+        sync: false
+      - key: VITE_FRONTEND_FORGE_API_URL
+        scope: build
+        sync: false
+      - key: VITE_FRONTEND_FORGE_API_KEY
+        scope: build
+        sync: false
+    autoDeploy: false

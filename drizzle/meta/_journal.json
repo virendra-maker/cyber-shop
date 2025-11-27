@@ -15,6 +15,13 @@
       "when": 1764050683550,
       "tag": "0001_sparkling_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1764162255088,
+      "tag": "0002_bumpy_masked_marvel",
+      "breakpoints": true
     }
   ]
 }
