@@ -181,6 +181,7 @@ export const appRouter = router({
           z.object({
             upiId: z.string(),
             upiName: z.string().optional(),
+            qrCode: z.string().optional(),
             bankAccount: z.string().optional(),
             phoneNumber: z.string().optional(),
           })

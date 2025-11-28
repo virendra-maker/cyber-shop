@@ -210,6 +210,14 @@ export default function AdminDashboard() {
               💳 Payments
             </Button>
           </Link>
+          <Link href="/admin/settings">
+            <Button
+              variant="ghost"
+              className="hover:bg-accent/10"
+            >
+              ⚙️ Settings
+            </Button>
+          </Link>
         </div>
 
         {/* Products Tab */}

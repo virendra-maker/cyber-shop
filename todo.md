@@ -54,3 +54,13 @@
 - [x] Create deployment guides
 - [ ] Test on Render
 - [ ] Test on Vercel
+
+
+## UPI QR Code Payment UI Update
+- [x] Update adminSettings schema to store UPI QR code
+- [x] Redesign PaymentRequest page with QR code display
+- [x] Add UPI ID display on payment page
+- [x] Add transaction ID input field
+- [x] Update admin settings UI to upload QR code
+- [x] Test payment workflow with new UI
+- [ ] Deploy updated version

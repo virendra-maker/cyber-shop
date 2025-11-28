@@ -140,6 +140,7 @@ export const adminSettings = mysqlTable("adminSettings", {
   adminId: int("adminId").notNull(),
   upiId: varchar("upiId", { length: 255 }).notNull(), // UPI ID for payments
   upiName: varchar("upiName", { length: 255 }), // Name associated with UPI
+  qrCode: text("qrCode"), // QR code image URL for UPI payments
   bankAccount: varchar("bankAccount", { length: 255 }), // Optional bank details
   phoneNumber: varchar("phoneNumber", { length: 20 }),
   isActive: int("isActive").default(1).notNull(),

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { AlertCircle, CheckCircle, Clock, Copy } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Copy, QrCode, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -52,8 +52,8 @@ export default function PaymentRequest() {
   };
 
   const handleSubmitPayment = async () => {
-    if (!productId || !transactionId) {
-      toast.error("Please fill in all fields");
+    if (!productId || !transactionId.trim()) {
+      toast.error("Please enter Transaction ID / UTR number");
       return;
     }
 
@@ -79,14 +79,19 @@ export default function PaymentRequest() {
     );
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container py-6">
-          <h1 className="text-3xl font-bold gradient-text">Payment Request</h1>
+          <h1 className="text-3xl font-bold gradient-text">UPI Payment</h1>
           <p className="text-muted-foreground mt-2">
-            Submit payment for courses, APIs, and services
+            Pay via UPI and submit transaction ID to get instant access
           </p>
         </div>
       </div>
@@ -103,41 +108,26 @@ export default function PaymentRequest() {
                     products.map((product) => (
                       <Card
                         key={product.id}
-                        className="cyber-card p-6 cursor-pointer hover:border-accent transition-all"
+                        className="cyber-card p-6 cursor-pointer hover:border-accent transition-colors"
                         onClick={() => handleSelectProduct(product)}
                       >
                         <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-bold mb-2">
-                              {product.name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-4">
+                          <div>
+                            <h3 className="text-lg font-bold">{product.name}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
                               {product.description}
                             </p>
-                            <div className="flex gap-4">
-                              <span className="text-sm">
-                                Stock: <span className="font-semibold">{product.stock}</span>
-                              </span>
-                              <span className="text-sm">
-                                Category ID: <span className="font-semibold">{product.categoryId}</span>
-                              </span>
-                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-3xl font-bold text-accent">
-                              ${(product.price / 100).toFixed(2)}
-                            </p>
-                            <Button size="sm" className="cyber-button mt-4">
-                              Select
-                            </Button>
-                          </div>
+                          <span className="text-2xl font-bold text-accent">
+                            ${(product.price / 100).toFixed(2)}
+                          </span>
                         </div>
                       </Card>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-center py-12">
-                      No products available
-                    </p>
+                    <Card className="cyber-card p-12 text-center">
+                      <p className="text-muted-foreground">No products available</p>
+                    </Card>
                   )}
                 </div>
               </div>
@@ -145,183 +135,268 @@ export default function PaymentRequest() {
 
             {step === "payment" && (
               <div>
-                <h2 className="text-2xl font-bold mb-6">Payment Details</h2>
-                <Card className="cyber-card p-8">
-                  <div className="mb-8 p-6 bg-accent/10 border border-accent/30 rounded-lg">
-                    <h3 className="font-bold text-lg mb-4 text-accent">
-                      UPI Payment Information
-                    </h3>
-                    {adminSettings ? (
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            UPI ID
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <code className="bg-background p-3 rounded flex-1 font-mono text-accent">
-                              {adminSettings.upiId}
-                            </code>
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep("select")}
+                  className="mb-6"
+                >
+                  ← Back to Products
+                </Button>
+
+                <div className="space-y-6">
+                  {/* QR Code Section */}
+                  <Card className="cyber-card p-8">
+                    <div className="flex items-center gap-2 mb-6">
+                      <QrCode className="h-5 w-5 text-accent" />
+                      <h3 className="text-xl font-bold">Scan QR Code</h3>
+                    </div>
+
+                    {adminSettings?.qrCode ? (
+                      <div className="bg-white p-6 rounded-lg flex justify-center mb-6">
+                        <img
+                          src={adminSettings.qrCode}
+                          alt="UPI QR Code"
+                          className="w-64 h-64 object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-card border-2 border-dashed border-border rounded-lg p-12 text-center mb-6">
+                        <QrCode className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                        <p className="text-muted-foreground">QR Code not available</p>
+                      </div>
+                    )}
+
+                    <p className="text-sm text-muted-foreground text-center">
+                      Scan this QR code with your UPI app to make payment
+                    </p>
+                  </Card>
+
+                  {/* UPI ID Section */}
+                  <Card className="cyber-card p-8">
+                    <div className="flex items-center gap-2 mb-6">
+                      <Smartphone className="h-5 w-5 text-accent" />
+                      <h3 className="text-xl font-bold">Or Pay Directly</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          UPI ID
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-input border border-border rounded-lg px-4 py-3 font-mono text-sm break-all">
+                            {adminSettings?.upiId || "Not configured"}
+                          </div>
+                          {adminSettings?.upiId && (
                             <Button
-                              size="sm"
                               variant="outline"
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  adminSettings.upiId
-                                );
-                                toast.success("Copied to clipboard!");
-                              }}
+                              size="icon"
+                              onClick={() => copyToClipboard(adminSettings.upiId)}
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
-                          </div>
+                          )}
                         </div>
-                        {adminSettings.upiName && (
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              Name
-                            </p>
-                            <p className="font-semibold">
-                              {adminSettings.upiName}
-                            </p>
-                          </div>
-                        )}
-                        {adminSettings.phoneNumber && (
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              Phone
-                            </p>
-                            <p className="font-semibold">
-                              {adminSettings.phoneNumber}
-                            </p>
-                          </div>
-                        )}
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        Loading payment details...
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Amount to Pay
+                        </label>
+                        <div className="bg-input border border-border rounded-lg px-4 py-3 font-bold text-lg text-accent">
+                          ₹{(amount / 100).toFixed(2)}
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground bg-card border border-border rounded p-3">
+                        💡 Open your UPI app (Google Pay, PhonePe, BHIM, etc.) and send payment to the UPI ID above
                       </p>
-                    )}
+                    </div>
+                  </Card>
+
+                  {/* Amount Display */}
+                  <Card className="cyber-card p-6 bg-accent/10 border-accent">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold">Total Amount:</span>
+                      <span className="text-3xl font-bold text-accent">
+                        ₹{(amount / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </Card>
+
+                  {/* Next Step Button */}
+                  <Button
+                    onClick={() => setStep("submit")}
+                    className="w-full cyber-button py-6 text-lg"
+                  >
+                    I've Completed Payment →
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {step === "submit" && (
+              <div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep("payment")}
+                  className="mb-6"
+                >
+                  ← Back to Payment
+                </Button>
+
+                <Card className="cyber-card p-8">
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold mb-2">Verify Payment</h3>
+                    <p className="text-muted-foreground">
+                      Enter your transaction ID or UTR number to complete the request
+                    </p>
                   </div>
 
                   <div className="space-y-6">
+                    {/* Transaction ID Input */}
                     <div>
                       <label className="block text-sm font-semibold mb-2">
-                        Amount to Pay
-                      </label>
-                      <div className="text-3xl font-bold text-accent">
-                        ${(amount / 100).toFixed(2)}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Transaction ID / UTR Number
+                        Transaction ID / UTR Number *
                       </label>
                       <Input
-                        placeholder="Enter UTR or Transaction ID from your bank"
+                        placeholder="e.g., 123456789012 or UTR1234567890"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
-                        className="bg-input border-border"
+                        className="bg-input border-border text-lg h-12"
                       />
                       <p className="text-xs text-muted-foreground mt-2">
-                        You can find this in your bank app or payment confirmation
+                        You can find this in your UPI app transaction history
                       </p>
                     </div>
 
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                        <strong>Important:</strong> After making the payment via UPI, enter the
-                        transaction ID above. The admin will verify and deliver your course/API
-                        access.
-                      </p>
-                    </div>
+                    {/* Instructions */}
+                    <Card className="bg-card border border-border p-4">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-accent" />
+                        How to find Transaction ID:
+                      </h4>
+                      <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                        <li>Open your UPI app (Google Pay, PhonePe, BHIM, etc.)</li>
+                        <li>Go to Transaction History or Recent Transactions</li>
+                        <li>Find the payment you just made</li>
+                        <li>Copy the Transaction ID or UTR number</li>
+                        <li>Paste it above and submit</li>
+                      </ol>
+                    </Card>
 
-                    <div className="flex gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep("select")}
-                        className="flex-1"
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleSubmitPayment}
-                        className="flex-1 cyber-button"
-                        disabled={submitPaymentMutation.isPending}
-                      >
-                        {submitPaymentMutation.isPending
-                          ? "Submitting..."
-                          : "Submit Payment Request"}
-                      </Button>
-                    </div>
+                    {/* Amount Summary */}
+                    <Card className="cyber-card p-6 bg-accent/10 border-accent">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Amount Paid:</span>
+                          <span className="font-bold text-accent">
+                            ₹{(amount / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Status:</span>
+                          <span className="font-bold text-yellow-500">Pending</span>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Submit Button */}
+                    <Button
+                      onClick={handleSubmitPayment}
+                      className="w-full cyber-button py-6 text-lg"
+                      disabled={submitPaymentMutation.isPending || !transactionId.trim()}
+                    >
+                      {submitPaymentMutation.isPending
+                        ? "Submitting..."
+                        : "Submit Payment Request"}
+                    </Button>
                   </div>
                 </Card>
               </div>
             )}
 
             {step === "success" && (
-              <div className="text-center">
-                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
-                <h2 className="text-3xl font-bold mb-4">Payment Request Submitted!</h2>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Your payment request has been submitted successfully. The admin will review and
-                  deliver your course/API access shortly.
+              <Card className="cyber-card p-8 text-center">
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Payment Request Submitted!</h2>
+                <p className="text-muted-foreground mb-6">
+                  Your payment request has been submitted successfully. The admin will verify and approve your payment shortly.
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  You will receive access details once the payment is approved.
                 </p>
                 <Button
                   onClick={() => setLocation("/payments")}
                   className="cyber-button"
                 >
-                  View My Requests
+                  View My Payments
                 </Button>
-              </div>
+              </Card>
             )}
           </div>
 
-          {/* Sidebar - Payment Status */}
-          <div>
-            <Card className="cyber-card sticky top-4">
-              <h3 className="text-xl font-bold mb-6 gradient-text">
-                Your Payment Requests
-              </h3>
-
-              {userRequests && userRequests.length > 0 ? (
-                <div className="space-y-4">
-                  {userRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="p-4 border border-border rounded-lg"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="font-semibold">
-                          Request #{request.id}
-                        </span>
-                        <span
-                          className={`text-xs font-bold px-2 py-1 rounded ${
-                            request.status === "pending"
-                              ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
-                              : request.status === "approved"
-                              ? "bg-blue-500/20 text-blue-700 dark:text-blue-400"
-                              : request.status === "delivered"
-                              ? "bg-green-500/20 text-green-700 dark:text-green-400"
-                              : "bg-red-500/20 text-red-700 dark:text-red-400"
-                          }`}
-                        >
-                          {request.status.toUpperCase()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        ${(request.amount / 100).toFixed(2)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(request.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="cyber-card p-6 sticky top-6">
+              <h3 className="text-lg font-bold mb-4">Payment Steps</h3>
+              <div className="space-y-4">
+                <div className={`flex gap-3 ${step === "select" ? "opacity-100" : "opacity-50"}`}>
+                  <div className="flex-shrink-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-black font-bold text-sm">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-semibold">Select Product</p>
+                    <p className="text-xs text-muted-foreground">Choose what to buy</p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No payment requests yet
-                </p>
+
+                <div className={`flex gap-3 ${step === "payment" ? "opacity-100" : "opacity-50"}`}>
+                  <div className="flex-shrink-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-black font-bold text-sm">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-semibold">Make Payment</p>
+                    <p className="text-xs text-muted-foreground">Scan QR or use UPI ID</p>
+                  </div>
+                </div>
+
+                <div className={`flex gap-3 ${step === "submit" ? "opacity-100" : "opacity-50"}`}>
+                  <div className="flex-shrink-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-black font-bold text-sm">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-semibold">Submit Transaction ID</p>
+                    <p className="text-xs text-muted-foreground">Enter UTR number</p>
+                  </div>
+                </div>
+
+                <div className={`flex gap-3 ${step === "success" ? "opacity-100" : "opacity-50"}`}>
+                  <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-black font-bold text-sm">
+                    ✓
+                  </div>
+                  <div>
+                    <p className="font-semibold">Admin Approval</p>
+                    <p className="text-xs text-muted-foreground">Get access details</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Requests */}
+              {userRequests && userRequests.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-border">
+                  <h4 className="font-semibold mb-3">Your Recent Requests</h4>
+                  <div className="space-y-2">
+                    {userRequests.slice(0, 3).map((req) => (
+                      <div key={req.id} className="text-xs bg-card p-2 rounded">
+                        <p className="font-semibold">₹{(req.amount / 100).toFixed(2)}</p>
+                        <p className="text-muted-foreground">
+                          Status: <span className="capitalize">{req.status}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </Card>
           </div>

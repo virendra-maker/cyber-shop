@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import PaymentRequest from "./pages/PaymentRequest";
 import Payments from "./pages/Payments";
 import AdminPayments from "./pages/AdminPayments";
+import AdminSettings from "./pages/AdminSettings";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -23,6 +24,7 @@ function Router() {
       <Route path={"/payments"} component={Payments} />
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/admin/payments"} component={AdminPayments} />
+      <Route path={"/admin/settings"} component={AdminSettings} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

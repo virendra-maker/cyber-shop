@@ -1,0 +1,1 @@
+ALTER TABLE `adminSettings` ADD `qrCode` text;
