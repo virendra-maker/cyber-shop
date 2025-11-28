@@ -34,8 +34,8 @@
 - [x] Test all core functionality locally
 - [x] Test admin panel access control
 - [x] Test shopping cart and checkout flow
-- [ ] Create checkpoint for stable version
-- [ ] Upload code to GitHub
+- [x] Create checkpoint for stable version
+- [x] Upload code to GitHub
 
 ## Payment & UPI Integration
 - [x] Add payment request table to database schema
